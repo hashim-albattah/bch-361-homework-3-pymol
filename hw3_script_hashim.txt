@@ -1,0 +1,110 @@
+
+
+reinitialize
+load PATH/TO/nucleoside.pdb, nuc
+
+# 1) adjust view
+
+hide everything
+show sticks, nuc
+util.cbag nuc
+set stick_radius, 0.18
+bg_color white
+set antialias, 2
+set ray_shadows, 0
+set ambient, 0.5
+set specular, 0.2
+
+# 2) color sugar vs base
+
+color cyan, nuc and (name C1' or name C1* or name C2' or name C2* or name C3' or name C3* or name C4' or name C4* or name C5' or name C5*)
+color tv_yellow, nuc and not (name C1' or name C1* or name C2' or name C2* or name C3' or name C3* or name C4' or name C4* or name C5' or name C5*)
+
+# 3) label sugar carbons C1′–C5′
+set label_font_id, 7
+set label_size, 22
+set label_color, black
+set label_outline_color, white
+label (nuc and (name C1' or name C1*)), "C1'"
+label (nuc and (name C2' or name C2*)), "C2'"
+label (nuc and (name C3' or name C3*)), "C3'"
+label (nuc and (name C4' or name C4*)), "C4'"
+label (nuc and (name C5' or name C5*)), "C5'"
+
+# 4) glycosidic bond 
+select baseN, nuc and (name N9 or name N1)
+select C1p,  nuc and (name C1' or name C1*)
+# dashed line (force one atom from each selection to avoid duplicates):
+distance gly_bond, (first C1p), (first baseN)
+set dash_width, 3, gly_bond
+set dash_color, purple, gly_bond
+set dash_gap, 0.4, gly_bond
+set dash_radius, 0.12, gly_bond
+
+# midpoint dot + label via Python
+python
+from pymol import cmd
+c1 = cmd.centerofmass("C1p")
+bn = cmd.centerofmass("baseN")
+mid = [(c1[i]+bn[i])/2.0 for i in range(3)]
+cmd.delete("pa_gly")
+cmd.pseudoatom("pa_gly", pos=mid)
+cmd.show("spheres", "pa_gly")
+cmd.set("sphere_scale", 0.20, "pa_gly")
+cmd.color("purple", "pa_gly")
+cmd.set("label_font_id", 7); cmd.set("label_size", 22)
+cmd.set("label_color", "black"); cmd.set("label_outline_color", "white")
+cmd.label("pa_gly", '"Glycosidic bond"')
+python end
+
+# 5) base identity (A/G/C/T/U): auto-detect + label
+python
+from pymol import cmd
+base_map = {'A':'Adenine','G':'Guanine','C':'Cytosine','U':'Uracil','T':'Thymine'}
+base_code = None
+for k in base_map:
+    if cmd.count_atoms(f"nuc and resn {k}"):
+        base_code = k; break
+cmd.delete("pa_base")
+if base_code:
+    sel = f"nuc and resn {base_code} and not name H*"
+    com = cmd.centerofmass(sel)
+    cmd.pseudoatom("pa_base", pos=com)
+    cmd.show("spheres", "pa_base")
+    cmd.set("sphere_scale", 0.25, "pa_base")
+    cmd.color("black", "pa_base")
+    cmd.set("label_font_id", 7); cmd.set("label_size", 22)
+    cmd.set("label_color", "black"); cmd.set("label_outline_color", "white")
+    cmd.label("pa_base", f'"Base: {base_map[base_code]} ({base_code})"')
+else:
+    print("Base not detected by resn (A/G/C/T/U).")
+python end
+
+# 6) DNA vs RNA: detect O2′ presence and label
+python
+from pymol import cmd
+is_rna = cmd.count_atoms("nuc and (name O2' or name O2*)") > 0
+cmd.delete("pa_type")
+com2 = cmd.centerofmass("nuc and (name C1' or name C1* or name C2' or name C2* or name C3' or name C3* or name C4' or name C4* or name C5' or name C5*)")
+cmd.pseudoatom("pa_type", pos=com2)
+cmd.show("spheres", "pa_type")
+cmd.set("sphere_scale", 0.25, "pa_type")
+cmd.color("black", "pa_type")
+cmd.set("label_font_id", 7); cmd.set("label_size", 22)
+cmd.set("label_color", "black"); cmd.set("label_outline_color", "white")
+cmd.label("pa_type", '"Type: RNA"' if is_rna else '"Type: DNA"')
+print("Detected nucleoside type:", "RNA" if is_rna else "DNA")
+python end
+
+# 7) polish / readability
+set dash_labels, off                 
+set sphere_scale, 0.15, pa_*         
+set sphere_transparency, 0.5, pa_*  
+
+# nudge label dots to reduce overlap
+# translate [0.0, 1.0, 0.0], object=pa_base
+# translate [-1.0, 0.0, 0.0], object=pa_type
+# translate [0.0, 0.0, 1.0], object=pa_gly
+
+# 8) final export
+png nucleoside_final.png, dpi=600, ray=1
