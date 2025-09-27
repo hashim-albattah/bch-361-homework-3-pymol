@@ -1,10 +1,8 @@
-
-
+```pml
 reinitialize
 load "C:\Users\hashi\OneDrive\Desktop\Biochemistry\nucleoside.pdb", nuc
 
 # 1) adjust view
-
 hide everything
 show sticks, nuc
 util.cbag nuc
@@ -16,7 +14,6 @@ set ambient, 0.5
 set specular, 0.2
 
 # 2) color sugar vs base
-
 color cyan, nuc and (name C1' or name C1* or name C2' or name C2* or name C3' or name C3* or name C4' or name C4* or name C5' or name C5*)
 color tv_yellow, nuc and not (name C1' or name C1* or name C2' or name C2* or name C3' or name C3* or name C4' or name C4* or name C5' or name C5*)
 
@@ -108,4 +105,3 @@ set sphere_transparency, 0.5, pa_*
 
 # 8) final export
 png C:\Users\hashi\OneDrive\Desktop\Biochemistry\nucleoside_final.png, dpi=600, ray=1
-
