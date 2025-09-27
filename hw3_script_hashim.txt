@@ -1,7 +1,7 @@
 
 
 reinitialize
-load PATH/TO/nucleoside.pdb, nuc
+load "C:\Users\hashi\OneDrive\Desktop\Biochemistry\nucleoside.pdb", nuc
 
 # 1) adjust view
 
@@ -107,4 +107,5 @@ set sphere_transparency, 0.5, pa_*
 # translate [0.0, 0.0, 1.0], object=pa_gly
 
 # 8) final export
-png nucleoside_final.png, dpi=600, ray=1
+png C:\Users\hashi\OneDrive\Desktop\Biochemistry\nucleoside_final.png, dpi=600, ray=1
+
